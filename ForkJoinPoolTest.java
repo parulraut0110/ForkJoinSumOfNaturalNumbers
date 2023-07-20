@@ -45,6 +45,15 @@ class FJSumOfNaturalNumbers extends RecursiveTask<Integer> {
 	}
 }
 
+class FJTaskThatReturnsNoFutureResult extends RecursiveTask<Integer> {
+
+	@Override
+	protected Integer compute() {
+		while(true);
+	}
+	
+}
+
 public class ForkJoinPoolTest {
 
 	public static void main(String[] args) throws InterruptedException, ExecutionException {
@@ -57,6 +66,33 @@ public class ForkJoinPoolTest {
         FJSumOfNaturalNumbers fjSum = new FJSumOfNaturalNumbers(1, 100);
         fjPool.invoke(fjSum);
         System.out.println("Sum of 100 natural number " + fjSum.get());
+	fjSum.setForkJoinTaskTag((short)-1);
+		System.out.println("ForkJoin Tag " + fjSum.getForkJoinTaskTag());
+		
+		fjSum.compareAndSetForkJoinTaskTag((short)-2, (short)3);
+		System.out.println("Updated ForkJoin Tag " + fjSum.getForkJoinTaskTag());
+		
+		FJTaskThatReturnsNoFutureResult fjTaskThatReturnsNoFutureResult = new FJTaskThatReturnsNoFutureResult();
+		//fjPool.invoke(fjTaskThatReturnsNoFutureResult);
+		//System.out.println("Reached");                  //Unreacheable at this point as the task invoke returns no result.
+		
+		/*
+		fjTaskThatReturnsNoFutureResult.completeExceptionally(new Exception("Task Completed abnormally with exception"));
+		System.out.println("Reached");
+		System.out.println(fjTaskThatReturnsNoFutureResult.getException());
+		*/
+		
+		fjTaskThatReturnsNoFutureResult.complete(5);
+		System.out.println("Forced result in future task " + fjTaskThatReturnsNoFutureResult.get());
+		
+		NonForkJoinTask nonForkJoinTask = new NonForkJoinTask();
+		fjPool.execute(nonForkJoinTask);
+		
+		System.out.println("Pool hosting FJSumOfNaturalNumbers " + FJSumOfNaturalNumbers.getPool());
+		
+		System.out.println("Queued Task Count " + FJSumOfNaturalNumbers.getQueuedTaskCount());
+		
+			
 	}
 
 }
